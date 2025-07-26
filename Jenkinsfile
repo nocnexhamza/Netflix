@@ -1,6 +1,7 @@
 pipeline {
     agent any
-    tools{
+    
+    tools {
         jdk 'jdk17'
         nodejs 'node16'
     }
@@ -44,7 +45,6 @@ pipeline {
                 docker {
                     image 'node:16'
                     args '-u root'
-                    
                 }
             }
             steps {
@@ -60,8 +60,6 @@ pipeline {
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
-        
-        
         
         stage('Build Docker Image') {
             steps {
@@ -124,32 +122,33 @@ pipeline {
         }
         
         stage('Deploy to Kubernetes') {
-    steps {
-        script {
-            withKubeConfig([credentialsId: 'k8s-credentials']) {
-                def patchedYaml = "K8s/deployment-${env.BUILD_NUMBER}.yaml"
+            steps {
+                script {
+                    withKubeConfig([credentialsId: 'k8s-credentials']) {
+                        def patchedYaml = "K8s/deployment-${env.BUILD_NUMBER}.yaml"
 
-                sh """
-                    sed 's|image:.*|image: ${DOCKER_REGISTRY}/${APP_NAME}:${env.BUILD_NUMBER}|g' \
-                        K8s/deployment.yaml > ${patchedYaml}
-                    
-                    kubectl apply -f ${patchedYaml}
-                    kubectl apply -f K8s/service.yaml
-                """
+                        sh """
+                            sed 's|image:.*|image: ${DOCKER_REGISTRY}/${APP_NAME}:${env.BUILD_NUMBER}|g' \
+                                K8s/deployment.yaml > ${patchedYaml}
+                            
+                            kubectl apply -f ${patchedYaml}
+                            kubectl apply -f K8s/service.yaml
+                        """
 
-                try {
-                    sh "kubectl rollout status deployment/${K8S_DEPLOYMENT} --timeout=60s"
-                } catch (err) {
-                    echo "⚠️ Deployment failed, rolling back..."
-                    sh "kubectl rollout undo deployment/${K8S_DEPLOYMENT}"
-                    error("Deployment failed and rollback was triggered.")
+                        try {
+                            sh "kubectl rollout status deployment/${K8S_DEPLOYMENT} --timeout=60s"
+                        } catch (err) {
+                            echo "⚠️ Deployment failed, rolling back..."
+                            sh "kubectl rollout undo deployment/${K8S_DEPLOYMENT}"
+                            error("Deployment failed and rollback was triggered.")
+                        }
+                    }
                 }
             }
         }
     }
-}
-   
-post {
+    
+    post {
         always {
             script {
                 sh 'rm -f K8s/deployment-*.yaml trivy-report.* || true'
