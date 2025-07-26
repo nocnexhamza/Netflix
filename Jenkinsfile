@@ -37,11 +37,14 @@ pipeline {
         }
         
         stage('SonarQube Analysis') {
+             environment {
+        NODE_OPTIONS = "--max-old-space-size=4096"
+    }
             steps {
                 script {
                     def scannerHome = tool 'SonarQubeScanner'
                     withSonarQubeEnv('SonarQube') {
-                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=Netflix -Dsonar.sources=. -Dsonar.language=js -Dsonar.exclusions=Dockerfile -Dsonar.javascript.enabled=false"
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=Netflix -Dsonar.sources=. -Dsonar.language=js -Dsonar.exclusions=Dockerfile"
                     }
                 }
             }
