@@ -124,22 +124,30 @@ pipeline {
         }
         
         stage('Deploy to Kubernetes') {
-            steps {
-                script {
-                    withKubeConfig([credentialsId: 'k8s-credentials']) {
-                        sh """
-                            sed 's|image:.*|image: ${DOCKER_REGISTRY}/${APP_NAME}:${env.BUILD_NUMBER}|g' \
-                                K8s/deployment.yaml > K8s/deployment-${env.BUILD_NUMBER}.yaml
-                            
-                            kubectl apply -f K8s/deployment-${env.BUILD_NUMBER}.yaml
-                            kubectl apply -f K8s/service.yaml
-                            kubectl rollout status deployment/${K8S_DEPLOYMENT}
-                        """
-                    }
+    steps {
+        script {
+            withKubeConfig([credentialsId: 'k8s-credentials']) {
+                def patchedYaml = "K8s/deployment-${env.BUILD_NUMBER}.yaml"
+
+                sh """
+                    sed 's|image:.*|image: ${DOCKER_REGISTRY}/${APP_NAME}:${env.BUILD_NUMBER}|g' \
+                        K8s/deployment.yaml > ${patchedYaml}
+                    
+                    kubectl apply -f ${patchedYaml}
+                    kubectl apply -f K8s/service.yaml
+                """
+
+                try {
+                    sh "kubectl rollout status deployment/${K8S_DEPLOYMENT} --timeout=60s"
+                } catch (err) {
+                    echo "⚠️ Deployment failed, rolling back..."
+                    sh "kubectl rollout undo deployment/${K8S_DEPLOYMENT}"
+                    error("Deployment failed and rollback was triggered.")
                 }
             }
         }
     }
+}
    
     post {
         always {
