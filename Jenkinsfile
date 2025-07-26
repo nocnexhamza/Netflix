@@ -30,7 +30,7 @@ pipeline {
             }
             stage('OWASP FS SCAN') {
             steps {
-                dependencyCheck additionalArguments: '--purge --scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                dependencyCheck additionalArguments: '--purge --scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check-2'
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
@@ -41,7 +41,7 @@ pipeline {
                 script {
                     def scannerHome = tool 'SonarQubeScanner'
                     withSonarQubeEnv('SonarQube') {
-                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=Netflix -Dsonar.sources=. -Dsonar.language=js -Dsonar.exclusions=Dockerfile -Dsonar.javascript.node.maxspace=4096"
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=Netflix -Dsonar.sources=. -Dsonar.language=js -Dsonar.exclusions=Dockerfile -Dsonar.javascript.node.maxspace=8192"
                     }
                 }
             }
