@@ -5,6 +5,7 @@ pipeline {
         DOCKER_REGISTRY = 'docker.io/nocnex'
         APP_NAME = 'Netflix'
         K8S_DEPLOYMENT = 'Netflix'
+        TMDB_V3_API_KEY = 'e96f6037fcb58dc5bf360d000a653a5b'
     }
     
     stages {
@@ -20,7 +21,7 @@ pipeline {
                 docker {
                     image 'node:16'
                     args '-u root'
-                    args '--build-arg TMDB_V3_API_KEY==e96f6037fcb58dc5bf360d000a653a5b'
+                    
                 }
             }
             steps {
@@ -28,12 +29,13 @@ pipeline {
                 sh 'npm audit fix || true'
                 sh 'npm test || echo "Tests failed but continuing deployment"'
             }
-            stage('OWASP FS SCAN') {
+        }
+        
+        stage('OWASP FS Scan') {
             steps {
-                dependencyCheck additionalArguments: '--purge --scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check-2'
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check-2'
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
-        }
         }
         
         stage('SonarQube Analysis') {
@@ -60,6 +62,7 @@ pipeline {
                 script {
                     sh """
                         DOCKER_BUILDKIT=1 docker build \
+                        --build-arg TMDB_V3_API_KEY=${TMDB_V3_API_KEY} \
                         -t ${DOCKER_REGISTRY}/${APP_NAME}:${env.BUILD_NUMBER} .
                     """
                 }
@@ -130,8 +133,7 @@ pipeline {
                 }
             }
         }
-        
-            }
+    }
    
     post {
         always {
