@@ -149,7 +149,7 @@ pipeline {
     }
 }
    
-    post {
+post {
         always {
             script {
                 sh 'rm -f K8s/deployment-*.yaml trivy-report.* || true'
