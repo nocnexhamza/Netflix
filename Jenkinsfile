@@ -1,5 +1,9 @@
 pipeline {
     agent any
+    tools{
+        jdk 'jdk17'
+        nodejs 'node16'
+    }
     
     environment {
         DOCKER_REGISTRY = 'docker.io/nocnex'
