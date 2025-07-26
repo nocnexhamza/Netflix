@@ -3,7 +3,7 @@ pipeline {
     
     environment {
         DOCKER_REGISTRY = 'docker.io/nocnex'
-        APP_NAME = 'Netflix'
+        APP_NAME = 'netflix'
         K8S_DEPLOYMENT = 'Netflix'
         TMDB_V3_API_KEY = 'e96f6037fcb58dc5bf360d000a653a5b'
     }
