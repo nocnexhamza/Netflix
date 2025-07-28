@@ -154,7 +154,7 @@ pipeline {
             // Scan exposed service (ensure it's reachable from Jenkins)
             sh '''
                 echo "Running OWASP Amass for DNS enumeration..."
-                docker run --rm caffix/amass enum -passive -d hp.nocnexus.com -o amass-results.txt || true
+                docker run --rm caffix/amass enum -passive -d netflix.nocnexus.com -o amass-results.txt || true
 
                 echo "Running OWASP ZAP baseline scan..."
                 docker run --rm -v $WORKSPACE:/zap/wrk:rw \
