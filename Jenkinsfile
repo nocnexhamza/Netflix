@@ -147,6 +147,40 @@ pipeline {
             }
         }
     }
+
+    stage('DAST Scanning') {
+    steps {
+        script {
+            // Scan exposed service (ensure it's reachable from Jenkins)
+            sh '''
+                echo "Running OWASP Amass for DNS enumeration..."
+                docker run --rm caffix/amass enum -passive -d hp.nocnexus.com -o amass-results.txt || true
+
+                echo "Running OWASP ZAP baseline scan..."
+                docker run --rm -v $WORKSPACE:/zap/wrk:rw \
+                    owasp/zap2docker-stable zap-baseline.py \
+                    -t https://hp.nocnexus.com \
+                    -r zap-report.html || true
+            '''
+        }
+    }
+    post {
+        always {
+            archiveArtifacts artifacts: '*.txt,*.html', allowEmptyArchive: true
+            publishHTML(target: [
+                reportDir: '.',
+                reportFiles: 'zap-report.html',
+                reportName: 'OWASP ZAP DAST Report'
+            ])
+        }
+        success {
+            echo 'DAST Scans completed.'
+        }
+        failure {
+            echo 'DAST Scans encountered issues.'
+        }
+    }
+}
     
     post {
         always {
